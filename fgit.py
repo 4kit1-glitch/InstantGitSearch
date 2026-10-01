@@ -1,13 +1,14 @@
 """
- Auto do a limited amount of research on a github user
+Auto do a limited amount of research on a github user
 """
 import os
 import sys
-import requests
-from pathlib import Path
-from dotenv import load_dotenv
-from typing import Any
 import subprocess
+from pathlib import Path
+from typing import Any
+
+import requests
+from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -15,6 +16,7 @@ _ENV_PATH = BASE_DIR / "AUTH_KEYS.env"
 
 
 def get_env() -> str:
+    """Load and return the GitHub token from the local environment file."""
     load_dotenv(_ENV_PATH)
 
     value = os.environ.get("GITHUB_PAT")
@@ -23,64 +25,83 @@ def get_env() -> str:
         raise SystemExit("PAT tocken not found pls add to AUTH_KEYS.env")
     return value
 
+
 AUTH_TOKEN = get_env()
 BASE_URL = "https://api.github.com"
-TIME_OUT = 10 # ten seconds sever timeout
+TIME_OUT = 10  # ten seconds sever timeout
 
 BASE_HEADERS = {
     "Authorization": f"Bearer {AUTH_TOKEN}",
     "Accept": "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2026-03-10"
+    "X-GitHub-Api-Version": "2026-03-10",
 }
 
+
 def _pause() -> None:
+    """Pause the script and clear the terminal output."""
     print("press enter to continue..", end="")
     input()
-    subprocess.run('cls' if os.name == "nt" else 'clear', check=False)
-    
+    subprocess.run("cls" if os.name == "nt" else "clear", check=False)
 
-def perform_request(url, header, time :int = 10) -> Any:
+
+def perform_request(url, header, time: int = 10) -> Any:
+    """Perform a GET request to the provided GitHub API URL."""
     try:
-        response = requests.get(url, headers=header, timeout=time, params={"per_page": 100, "page": 1})
+        response = requests.get(
+            url,
+            headers=header,
+            timeout=time,
+            params={"per_page": 100, "page": 1},
+        )
         response.raise_for_status()
         return response.json()
     except requests.RequestException as err:
         print(f"Error occured: {err}")
         raise
 
+
 def get_user(user_name: str) -> dict | None:
+    """Fetch a GitHub user profile by username."""
     USER_URL = f"{BASE_URL}/users/{user_name}"
 
     data = perform_request(USER_URL, BASE_HEADERS, TIME_OUT)
     try:
         output = {
-            "login": data["login"], "followers": data["followers"], 
-            "following": data["following"], "repo_count": data["public_repos"],
-            "following_url": data["following_url"], "followers_url": data["followers_url"],
-            "repo_url": data["repos_url"], "name": data.get("name", "not specified")
+            "login": data["login"],
+            "followers": data["followers"],
+            "following": data["following"],
+            "repo_count": data["public_repos"],
+            "following_url": data["following_url"],
+            "followers_url": data["followers_url"],
+            "repo_url": data["repos_url"],
+            "name": data.get("name", "not specified"),
         }
         return output
     except (ValueError, KeyError) as err:
         print(f"Value error: {err}")
         raise
 
+
 def profile_user(info: dict) -> None:
+    """Print a formatted summary of a user profile."""
     name = info.get("name", "unspecified")
     uname = info.get("login", "unspecified")
     rcount = info.get("repo_count")
     follower_count = info.get("followers")
-    following_count = info.get("following") 
+    following_count = info.get("following")
     print(
-f"""
+        f"""
 ************{uname} Info*****************
 name = {name}
 followers = {follower_count}
 following = {following_count}
 repository num = {rcount}
 """
-)
+    )
+
 
 def follow(user_name: str):
+    """Follow a user on GitHub."""
     FOLLOW_URL = f"https://api.github.com/user/following/{user_name}"
     try:
         response = requests.put(FOLLOW_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
@@ -93,9 +114,10 @@ def follow(user_name: str):
 
     response.raise_for_status()
     print(f"Followed {user_name}")
-  
+
 
 def unfollow(user_name: str):
+    """Unfollow a user on GitHub."""
     FOLLOW_URL = f"https://api.github.com/user/following/{user_name}"
     try:
         response = requests.delete(FOLLOW_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
@@ -111,7 +133,8 @@ def unfollow(user_name: str):
     print(f"Unfollowed {user_name}")
 
 
-def see_repos(user_name : str) -> None:
+def see_repos(user_name: str) -> None:
+    """Print a simple list of a user's repositories and star counts."""
     REPO_URL = f"{BASE_URL}/users/{user_name}/repos"
     try:
         response = requests.get(REPO_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
@@ -119,15 +142,16 @@ def see_repos(user_name : str) -> None:
 
         print(f"{'name'}{'stars'.rjust(100)}")
         for repo in repos:
-            print(f"{repo["name"]:<100} {repo["stargazers_count"]}")
-    
+            print(f"{repo['name']:<100} {repo['stargazers_count']}")
+
     except (ValueError, requests.RequestException) as err:
         print(f"error occured {err}")
 
 
-
 def front_end(name: str):
-    print(f"""
+    """Display the interactive repository menu."""
+    print(
+        f"""
 Welcome:
 1. profile {name}
 2. follow {name}
@@ -135,13 +159,16 @@ Welcome:
 4. see repositories
 5. exit
 
-""")
-    
+"""
+    )
+
+
 def main():
+    """Run the GitHub profile CLI."""
     user_name = input("Enter username: ")
     try:
         data = get_user(user_name)
-        
+
     except requests.RequestException:
         print(f"failed to get user {user_name}")
         return 1
@@ -149,7 +176,7 @@ def main():
     if not data:
         print("could not load user data")
         return 1
-    
+
     login = data["login"]
 
     while True:
@@ -162,8 +189,8 @@ def main():
             continue
         except (KeyboardInterrupt, EOFError):
             print("\nExiting...")
-            return 0 
-        
+            return 0
+
         try:
             match response:
                 case 1:
