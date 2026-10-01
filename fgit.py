@@ -1,14 +1,19 @@
-"""
-Auto do a limited amount of research on a github user
-"""
+"""Auto do a limited amount of research on a GitHub user."""
+
 import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
 import requests
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - handles environments without the package installed
+    def load_dotenv(*_args, **_kwargs):
+        """Fallback loader used when python-dotenv is unavailable."""
+        return False
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -20,15 +25,14 @@ def get_env() -> str:
     load_dotenv(_ENV_PATH)
 
     value = os.environ.get("GITHUB_PAT")
-
-    if value is None:
-        raise SystemExit("PAT tocken not found pls add to AUTH_KEYS.env")
+    if value is None or not value.strip():
+        raise SystemExit("PAT token not found. Please add GITHUB_PAT to AUTH_KEYS.env")
     return value
 
 
 AUTH_TOKEN = get_env()
 BASE_URL = "https://api.github.com"
-TIME_OUT = 10  # ten seconds sever timeout
+TIME_OUT = 10
 
 BASE_HEADERS = {
     "Authorization": f"Bearer {AUTH_TOKEN}",
@@ -44,7 +48,7 @@ def _pause() -> None:
     subprocess.run("cls" if os.name == "nt" else "clear", check=False)
 
 
-def perform_request(url, header, time: int = 10) -> Any:
+def perform_request(url: str, header: dict[str, str], time: int = 10) -> Any:
     """Perform a GET request to the provided GitHub API URL."""
     try:
         response = requests.get(
@@ -56,15 +60,15 @@ def perform_request(url, header, time: int = 10) -> Any:
         response.raise_for_status()
         return response.json()
     except requests.RequestException as err:
-        print(f"Error occured: {err}")
+        print(f"Error occurred: {err}")
         raise
 
 
 def get_user(user_name: str) -> dict | None:
     """Fetch a GitHub user profile by username."""
-    USER_URL = f"{BASE_URL}/users/{user_name}"
+    user_url = f"{BASE_URL}/users/{user_name}"
 
-    data = perform_request(USER_URL, BASE_HEADERS, TIME_OUT)
+    data = perform_request(user_url, BASE_HEADERS, TIME_OUT)
     try:
         output = {
             "login": data["login"],
@@ -77,7 +81,7 @@ def get_user(user_name: str) -> dict | None:
             "name": data.get("name", "not specified"),
         }
         return output
-    except (ValueError, KeyError) as err:
+    except (KeyError, TypeError, ValueError) as err:
         print(f"Value error: {err}")
         raise
 
@@ -86,7 +90,7 @@ def profile_user(info: dict) -> None:
     """Print a formatted summary of a user profile."""
     name = info.get("name", "unspecified")
     uname = info.get("login", "unspecified")
-    rcount = info.get("repo_count")
+    repo_count = info.get("repo_count")
     follower_count = info.get("followers")
     following_count = info.get("following")
     print(
@@ -95,38 +99,37 @@ def profile_user(info: dict) -> None:
 name = {name}
 followers = {follower_count}
 following = {following_count}
-repository num = {rcount}
+repository num = {repo_count}
 """
     )
 
 
-def follow(user_name: str):
+def follow(user_name: str) -> None:
     """Follow a user on GitHub."""
-    FOLLOW_URL = f"https://api.github.com/user/following/{user_name}"
+    follow_url = f"{BASE_URL}/user/following/{user_name}"
     try:
-        response = requests.put(FOLLOW_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
+        response = requests.put(follow_url, headers=BASE_HEADERS, timeout=TIME_OUT)
         if response.status_code == 422:
-            print("Cant follow your self")
+            print("Can't follow yourself")
             return
-    except requests.RequestException as e:
-        print(f"ERROR OCCURED: {e}")
+    except requests.RequestException as err:
+        print(f"ERROR OCCURRED: {err}")
         return
 
     response.raise_for_status()
     print(f"Followed {user_name}")
 
 
-def unfollow(user_name: str):
+def unfollow(user_name: str) -> None:
     """Unfollow a user on GitHub."""
-    FOLLOW_URL = f"https://api.github.com/user/following/{user_name}"
+    follow_url = f"{BASE_URL}/user/following/{user_name}"
     try:
-        response = requests.delete(FOLLOW_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
+        response = requests.delete(follow_url, headers=BASE_HEADERS, timeout=TIME_OUT)
         if response.status_code == 422:
-            print("Cant unfollow your self")
+            print("Can't unfollow yourself")
             return
-
-    except requests.RequestException as e:
-        print(f"ERROR OCCURED: {e}")
+    except requests.RequestException as err:
+        print(f"ERROR OCCURRED: {err}")
         return
 
     response.raise_for_status()
@@ -135,20 +138,24 @@ def unfollow(user_name: str):
 
 def see_repos(user_name: str) -> None:
     """Print a simple list of a user's repositories and star counts."""
-    REPO_URL = f"{BASE_URL}/users/{user_name}/repos"
+    repo_url = f"{BASE_URL}/users/{user_name}/repos"
     try:
-        response = requests.get(REPO_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
+        response = requests.get(repo_url, headers=BASE_HEADERS, timeout=TIME_OUT)
+        response.raise_for_status()
         repos = response.json()
 
-        print(f"{'name'}{'stars'.rjust(100)}")
+        if not repos:
+            print("No public repositories found.")
+            return
+
+        print(f"{'name':<40} {'stars':>6}")
         for repo in repos:
-            print(f"{repo['name']:<100} {repo['stargazers_count']}")
-
+            print(f"{repo['name']:<40} {repo['stargazers_count']:>6}")
     except (ValueError, requests.RequestException) as err:
-        print(f"error occured {err}")
+        print(f"Error occurred: {err}")
 
 
-def front_end(name: str):
+def front_end(name: str) -> None:
     """Display the interactive repository menu."""
     print(
         f"""
@@ -163,21 +170,42 @@ Welcome:
     )
 
 
-def main():
+def handle_option(option: int, data: dict) -> bool:
+    """Execute the selected menu item and return whether the app should exit."""
+    login = data["login"]
+
+    if option == 1:
+        profile_user(data)
+        return False
+    if option == 2:
+        follow(login)
+        return False
+    if option == 3:
+        unfollow(login)
+        return False
+    if option == 4:
+        see_repos(login)
+        return False
+    if option == 5:
+        print("Exiting...")
+        return True
+
+    print(f"Unknown input {option}, retry..")
+    return False
+
+
+def main() -> int:
     """Run the GitHub profile CLI."""
     user_name = input("Enter username: ")
     try:
         data = get_user(user_name)
-
     except requests.RequestException:
-        print(f"failed to get user {user_name}")
+        print(f"Failed to get user {user_name}")
         return 1
 
     if not data:
-        print("could not load user data")
+        print("Could not load user data")
         return 1
-
-    login = data["login"]
 
     while True:
         front_end(data["name"])
@@ -192,27 +220,13 @@ def main():
             return 0
 
         try:
-            match response:
-                case 1:
-                    profile_user(data)
-                case 2:
-                    follow(login)
-                case 3:
-                    unfollow(login)
-                case 4:
-                    see_repos(login)
-                case 5:
-                    print("exiting...")
-                    return 0
-                case _:
-                    print(f"unknown input {response}, retry..")
+            should_exit = handle_option(response, data)
+            if should_exit:
+                return 0
             _pause()
-        except ValueError as err:
-            print(f"error occured {err}")
+        except (KeyboardInterrupt, ValueError) as err:
+            print(f"Error occurred: {err}")
             return 1
-        except KeyboardInterrupt:
-            print("Exiting..")
-            return 0
 
 
 if __name__ == "__main__":
