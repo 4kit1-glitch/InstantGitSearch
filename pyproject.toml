@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "instantgitsearch"
+version = "0.1.0"
+description = "A lightweight CLI for searching GitHub user data and managing follow actions."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "InstantGitSearch" }]
+license = { text = "Educational" }
+dependencies = [
+  "requests>=2.31.0",
+  "python-dotenv>=1.0.1",
+]
+
+[project.scripts]
+instantgitsearch = "fgit:main"
+
+[tool.setuptools]
+py-modules = ["fgit"]
