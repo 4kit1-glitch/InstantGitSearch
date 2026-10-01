@@ -117,7 +117,7 @@ def see_repos(user_name : str) -> None:
         response = requests.get(REPO_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
         repos = response.json()
 
-        print(f"{"name"}{"stars".rjust(100)}")
+        print(f"{'name'}{'stars'.rjust(100)}")
         for repo in repos:
             print(f"{repo["name"]:<100} {repo["stargazers_count"]}")
     
