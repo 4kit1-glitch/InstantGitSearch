@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "instantgitsearch"
+version = "0.1.0"
+description = "A small interactive CLI for exploring GitHub user data."
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+
+[project.scripts]
+instantgitsearch = "fgit:main"
+
+[tool.setuptools]
+py-modules = ["fgit"]
