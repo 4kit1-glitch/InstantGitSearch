@@ -1,8 +1,7 @@
 # InstantGitSearch
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB.svg)
+![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB.svg)
 ![GitHub API](https://img.shields.io/badge/GitHub-REST%20API-181717.svg)
-![Status](https://img.shields.io/badge/Status-Learning%20Project-orange.svg)
 
 A lightweight Python command-line project for exploring GitHub user data through the GitHub REST API. It is designed as a simple interactive utility to practice working with API requests, environment variables, and authenticated GitHub actions.
 
@@ -29,7 +28,7 @@ This project is intentionally minimal and beginner-friendly, making it a good ex
 
 ## Tech Stack
 
-- Python 3.9+
+- Python 3.12+
 - requests
 - python-dotenv
 - GitHub REST API
@@ -37,7 +36,8 @@ This project is intentionally minimal and beginner-friendly, making it a good ex
 ## Project Structure
 
 - `fgit.py` — main CLI application logic
-- `pyproject.toml` — package metadata and installation configuration
+- `pyproject.toml` — package metadata, dependencies, and CLI entry point
+- `test_fgit.py` — automated tests for the API and CLI behavior
 - `AUTH_KEYS.env` — local environment file for the GitHub PAT
 - `REQ_KEYS.env.example` — configuration template
 - `README.md` — project documentation
@@ -46,9 +46,10 @@ This project is intentionally minimal and beginner-friendly, making it a good ex
 
 Before running the project, ensure you have:
 
-- Python 3.9 or newer
+- Python 3.12 or newer
 - A GitHub account
 - A GitHub Personal Access Token (PAT) with the permissions required for the actions you plan to use
+- `pip` for installing Python dependencies
 
 ## Quick Start
 
@@ -69,10 +70,20 @@ GITHUB_PAT=your_github_personal_access_token_here
 
 > The script reads the value from `GITHUB_PAT` in `AUTH_KEYS.env`.
 
-### 3. Install the project
+### 3. Install dependencies
+
+Create and activate a virtual environment, then install the project and its test dependencies:
 
 ```bash
-pip install -e .
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[test]"
+```
+
+On Windows PowerShell, activate the virtual environment with:
+
+```powershell
+.venv\Scripts\Activate.ps1
 ```
 
 ### 4. Run the application
@@ -81,11 +92,17 @@ pip install -e .
 instantgitsearch
 ```
 
-You can also run it directly without installing:
+You can also run the application directly with `python fgit.py`.
+
+## Tests
+
+Run the test suite from the project root with:
 
 ```bash
-python fgit.py
+python -m pytest -v
 ```
+
+Running the tests is recommended after making changes to check that API requests and menu behavior still work as expected.
 
 ## Usage
 
@@ -125,6 +142,7 @@ repository num = 9
 - This project is intended for learning and experimentation rather than production-grade automation.
 - GitHub API rate limits may apply depending on the token type and usage patterns.
 - Follow and unfollow operations require authentication and will be subject to GitHub’s API rules.
+- Request errors during a menu action are reported to standard error; the menu remains available afterward.
 
 ## License
 
