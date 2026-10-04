@@ -109,11 +109,11 @@ def unfollow(user_name: str) -> None:
         response = requests.delete(FOLLOW_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
         if response.status_code == 422:
             print("Cant unfollow your self")
-            return
+            return 
 
     except requests.RequestException as e:
         print(f"ERROR OCCURED: {e}")
-        return
+        return 
 
     response.raise_for_status()
     print(f"Unfollowed {user_name}")
@@ -122,16 +122,12 @@ def unfollow(user_name: str) -> None:
 def see_repos(user_name : str) -> None:
     """Print the user's public repositories and their star counts."""
     REPO_URL = f"{BASE_URL}/users/{user_name}/repos"
-    try:
-        response = requests.get(REPO_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
-        repos = response.json()
-
-        print(f"{"name"}{"stars".rjust(100)}")
-        for repo in repos:
-            print(f"{repo["name"]:<100} {repo["stargazers_count"]}")
-    
-    except (ValueError, requests.RequestException) as err:
-        print(f"error occured {err}")
+    response = requests.get(REPO_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
+    response.raise_for_status()
+    repos = response.json()
+    print(f"{"name"}{"stars".rjust(100)}")
+    for repo in repos:
+        print(f"{repo["name"]:<100} {repo["stargazers_count"]}")
 
 
 
@@ -191,8 +187,10 @@ def main() -> int:
                 case _:
                     print(f"unknown input {response}, retry..")
             _pause()
+        except requests.RequestException as err:
+            print(f"Request failed: {err}", file=sys.stderr)
         except ValueError as err:
-            print(f"error occured {err}")
+            print(f"error occured {err}", file=sys.stderr)
             return 1
         except KeyboardInterrupt:
             print("Exiting..")

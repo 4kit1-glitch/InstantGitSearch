@@ -1,10 +1,10 @@
 import pytest
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, patch
 from requests.exceptions import HTTPError, RequestException
 
 from fgit import (
     get_env, perform_request, get_user, follow, unfollow, see_repos,
-    BASE_URL, BASE_HEADERS, TIME_OUT,
+    BASE_URL, BASE_HEADERS, TIME_OUT, main
 )
 
 
@@ -58,6 +58,8 @@ def test_get_user_returns_expected_fields(mock_get):
         "following": 2,
         "public_repos": 3,
         "repos_url": f"{BASE_URL}/users/octocat/repos",
+        "following_url": f"{BASE_URL}/users/octocat/following{{/other_user}}",
+        "followers_url": f"{BASE_URL}/users/octocat/followers",
         "name": "Octocat",
     }
     mock_get.return_value.raise_for_status.return_value = None
@@ -73,7 +75,11 @@ def test_get_user_returns_expected_fields(mock_get):
 def test_get_user_calls_correct_url(mock_get):
     mock_get.return_value.json.return_value = {
         "login": "octocat", "followers": 0, "following": 0,
-        "public_repos": 0, "repos_url": "x", "name": "x",
+        "public_repos": 0,
+        "repos_url": f"{BASE_URL}/users/octocat/repos",
+        "name": "x",
+        "following_url": f"{BASE_URL}/users/octocat/following{{/other_user}}",
+        "followers_url": f"{BASE_URL}/users/octocat/followers",
     }
     mock_get.return_value.raise_for_status.return_value = None
 
@@ -145,5 +151,21 @@ def test_see_repos_calls_correct_url(mock_get):
 def test_see_repos_raises_on_failure(mock_get):
     mock_get.return_value.raise_for_status.side_effect = HTTPError("500")
 
-    with pytest.raises(HTTPError):
+    with pytest.raises(HTTPError, match="500"):
         see_repos("octocat")
+
+
+@patch("fgit._pause")
+@patch("fgit.see_repos", side_effect=RequestException("no internet"))
+@patch("fgit.get_user")
+@patch("builtins.input", side_effect=["octocat", "4", "5"])
+def test_main_reports_request_failure_and_keeps_menu(
+    mock_input, mock_get_user, mock_see_repos, mock_pause, capsys
+):
+    mock_get_user.return_value = {"login": "octocat", "name": "Octocat"}
+
+    assert main() == 0
+
+    assert "Request failed: no internet" in capsys.readouterr().err
+    mock_see_repos.assert_called_once_with("octocat")
+    mock_pause.assert_not_called()
