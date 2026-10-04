@@ -86,7 +86,7 @@ repository num = {rcount}
 """
 )
 
-def follow(user_name: str):
+def follow(user_name: str) -> None:
     """Follow a GitHub user using the configured account."""
     FOLLOW_URL = f"https://api.github.com/user/following/{user_name}"
     try:
@@ -102,7 +102,7 @@ def follow(user_name: str):
     print(f"Followed {user_name}")
   
 
-def unfollow(user_name: str):
+def unfollow(user_name: str) -> None:
     """Unfollow a GitHub user using the configured account."""
     FOLLOW_URL = f"https://api.github.com/user/following/{user_name}"
     try:
@@ -135,7 +135,7 @@ def see_repos(user_name : str) -> None:
 
 
 
-def front_end(name: str):
+def front_end(name: str) -> None:
     """Display the available actions for the selected user."""
     print(f"""
 Welcome:
@@ -147,7 +147,7 @@ Welcome:
 
 """)
     
-def main():
+def main() -> int:
     """Run the interactive GitHub user lookup and action menu."""
     user_name = input("Enter username: ")
     try:
