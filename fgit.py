@@ -15,6 +15,7 @@ _ENV_PATH = BASE_DIR / "AUTH_KEYS.env"
 
 
 def get_env() -> str:
+    """Load and return the GitHub personal access token."""
     load_dotenv(_ENV_PATH)
 
     value = os.environ.get("GITHUB_PAT")
@@ -34,12 +35,14 @@ BASE_HEADERS = {
 }
 
 def _pause() -> None:
+    """Wait for the user to continue, then clear the terminal."""
     print("press enter to continue..", end="")
     input()
     subprocess.run('cls' if os.name == "nt" else 'clear', check=False)
     
 
 def perform_request(url, header, time :int = 10) -> Any:
+    """Send a paginated GET request and return its decoded JSON response."""
     try:
         response = requests.get(url, headers=header, timeout=time, params={"per_page": 100, "page": 1})
         response.raise_for_status()
@@ -49,6 +52,7 @@ def perform_request(url, header, time :int = 10) -> Any:
         raise
 
 def get_user(user_name: str) -> dict | None:
+    """Fetch a GitHub user's profile details."""
     USER_URL = f"{BASE_URL}/users/{user_name}"
 
     data = perform_request(USER_URL, BASE_HEADERS, TIME_OUT)
@@ -65,6 +69,7 @@ def get_user(user_name: str) -> dict | None:
         raise
 
 def profile_user(info: dict) -> None:
+    """Print the selected profile information."""
     name = info.get("name", "unspecified")
     uname = info.get("login", "unspecified")
     rcount = info.get("repo_count")
@@ -81,6 +86,7 @@ repository num = {rcount}
 )
 
 def follow(user_name: str):
+    """Follow a GitHub user using the configured account."""
     FOLLOW_URL = f"https://api.github.com/user/following/{user_name}"
     try:
         response = requests.put(FOLLOW_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
@@ -96,6 +102,7 @@ def follow(user_name: str):
   
 
 def unfollow(user_name: str):
+    """Unfollow a GitHub user using the configured account."""
     FOLLOW_URL = f"https://api.github.com/user/following/{user_name}"
     try:
         response = requests.delete(FOLLOW_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
@@ -112,6 +119,7 @@ def unfollow(user_name: str):
 
 
 def see_repos(user_name : str) -> None:
+    """Print the user's public repositories and their star counts."""
     REPO_URL = f"{BASE_URL}/users/{user_name}/repos"
     try:
         response = requests.get(REPO_URL, headers=BASE_HEADERS, timeout=TIME_OUT)
@@ -127,6 +135,7 @@ def see_repos(user_name : str) -> None:
 
 
 def front_end(name: str):
+    """Display the available actions for the selected user."""
     print(f"""
 Welcome:
 1. profile {name}
@@ -138,6 +147,7 @@ Welcome:
 """)
     
 def main():
+    """Run the interactive GitHub user lookup and action menu."""
     user_name = input("Enter username: ")
     try:
         data = get_user(user_name)
