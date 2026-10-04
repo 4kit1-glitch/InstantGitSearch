@@ -2,12 +2,13 @@
  Auto do a limited amount of research on a github user
 """
 import os
-import sys
-import requests
-from pathlib import Path
-from dotenv import load_dotenv
-from typing import Any
 import subprocess
+import sys
+from pathlib import Path
+from typing import Any
+
+import requests
+from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent
