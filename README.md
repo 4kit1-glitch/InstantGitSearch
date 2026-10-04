@@ -137,6 +137,11 @@ following = 14
 repository num = 9
 ```
 
+## Next Updates
+
+- Show a user's GitHub contribution count.
+- Add a profile score using GitHub's GraphQL API through a GraphQL module.
+
 ## Notes
 
 - This project is intended for learning and experimentation rather than production-grade automation.
@@ -146,5 +151,5 @@ repository num = 9
 
 ## License
 
-This project is provided for educational purposes and does not currently include a formal license file.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
