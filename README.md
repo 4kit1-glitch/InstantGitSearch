@@ -26,13 +26,6 @@ This project is intentionally minimal and beginner-friendly, making it a good ex
 - Environment-based GitHub token configuration
 - Easy local installation with Python packaging
 
-## Tech Stack
-
-- Python 3.12+
-- requests
-- python-dotenv
-- GitHub REST API
-
 ## Project Structure
 
 - `fgit.py` — main CLI application logic
